@@ -14,7 +14,7 @@ print(url)
 
 sub_bank_api = '/account/bank'
 sub_materials_api = '/account/materials'
-authorization = {'Authorization': 'Bearer C5E878F1-F241-354C-BA66-65D7481FEC6A6DDDF75C-3455-4DBC-AECC-B03FEB30EFE3'}
+authorization = {'Authorization': 'Bearer '}
 
 bank_url = main_api + sub_bank_api
 materials_url = main_api + sub_materials_api
