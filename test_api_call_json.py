@@ -1,30 +1,30 @@
-
 import requests
 import datetime
 import os
 import json
+from pip._vendor.distlib.compat import raw_input
 
+""""--------------------------------------------------------------------------------------------------------------------
+ API
+---------------------------------------------------------------------------------------------------------------------"""
 main_api = 'https://api.guildwars2.com/v2'
 
 sub_api = '/commerce/listings'
 url = main_api + sub_api
-print(url)
-
-sub_bank_api = '/account/bank'
-sub_materials_api = '/account/materials'
-authorization = {'Authorization': 'Bearer  """Enter API key here"""'}
-
-check_save_all = False
-check_save_all_listings = False
-check_save_bank = False
-check_save_mats = False
-check_save_toons = False
-check_save_owned = False
 
 
 
-number_list = requests.get(url).json()
+# 'Bearer C5E878F1-F241-354C-BA66-65D7481FEC6A6DDDF75C-3455-4DBC-AECC-B03FEB30EFE3'
+authorization = ""
 
+api_key = ""
+bearer = 'Bearer ' + api_key
+authorization = {'Authorization': bearer}
+
+#def set_authorization(api_key):
+#    api_key = ""
+#    bearer = 'Bearer ' + api_key
+#    authorization = {'Authorization': bearer}
 
 # print(json_bank_data)
 # for item in json_bank_data:
@@ -76,6 +76,11 @@ number_list = requests.get(url).json()
 'restrictions'  (array of strings) = Asura, Charr, Human, Norn, Sylvari, Elementalist, Engineer, Guardian, Mesmer,
                                      Necromancer, Ranger, Theif, Warrior
 'details'       (object, optional) = Additional item details if applicable, depending on the type of the item
+
+
+json_dictionary_keys = {'basic': ['id', 'name', 'type'],
+                        'all': ['chat_link', 'name', 'icon', 'description', 'type', 'rarity', 'level', 'vendor_value',
+                                'default_skin', 'flags', 'game_types', 'restrictions', 'details']}
 """
 
 """"--------------------------------------------------------------------------------------------------------------------
@@ -98,6 +103,7 @@ def has_expired(date):
 Initialize Values
 ---------------------------------------------------------------------------------------------------------------------"""
 
+number_list = requests.get(url).json()
 
 dictionary_all_items = dict()
 
@@ -109,11 +115,29 @@ dictionary_materials = dict()
 
 dictionary_toon_list = dict()
 
-dictionary_currency = dict()
+dictionary_wallet = dict()
+
+dictionary_currency_list = dict()
 
 dictionary_owned = dict()
 
 item = 0
+
+check_save_all = False
+
+check_save_all_listings = False
+
+check_save_bank = False
+
+check_save_mats = False
+
+check_save_toons = False
+
+check_save_owned = False
+
+dictionary_list = [dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_wallet, dictionary_currency_list, dictionary_owned]
+
+debug = False
 
 
 """"--------------------------------------------------------------------------------------------------------------------
@@ -125,8 +149,7 @@ def save_all_items(dict):
     if check_save_all:
         with open('all_items_dictionary.json','w') as outfile:
             json.dump(dict, outfile)
-
-
+        print('all_items_dictionary saved')
 
 def load_all_items():
     with open(os.getcwd() + '\\all_items_dictionary.json') as fp:
@@ -195,12 +218,13 @@ def update_dictionary_all_items():
                                             'default_skin': default_skin, 'flags': flags, 'game_types': game_types,
                                             'restrictions': restrictions, 'details': details}})"""
                         id = l['id']
-                        name = l['name']
+                        name = l['name'].lower()
 
                         # allows for a search using Id or Name
                         result.update({name: l})
                         result.update({id: l})
-                        print('item: ' + str(id))
+                        if debug:
+                            print('item: ' + str(id) + name)
                 except:
                     print("Error in saving listing")
             return result
@@ -241,12 +265,13 @@ def update_dictionary_all_items():
                                         'default_skin': default_skin, 'flags': flags, 'game_types': game_types,
                                         'restrictions': restrictions, 'details': details}})"""
                     id = l['id']
-                    name = l['name']
+                    name = l['name'].lower()
 
                     #allows for a search using Id or Name
                     result.update({name: l })
                     result.update({id: l})
-                    print('item: ' + str(id))
+                    if debug:
+                        print('item: ' + str(id) + name)
             except:
                 print("Error in saving listing")
         return result
@@ -265,17 +290,97 @@ def update_dictionary_all_items():
 Currency: Wallet
 ---------------------------------------------------------------------------------------------------------------------"""
 
+def save_wallet(dict):
+    if check_save_toons:
+        with open('wallet_dictionary.json', 'w') as outfile:
+            json.dump(dict, outfile)
+        print('wallet_dictionary saved')
 
+
+def load_wallet():
+    with open(os.getcwd() + '\\wallet_dictionary.json') as fp:
+        f = json.load(fp)
+    return f
+
+def update_dictionary_wallet():
+    global check_save_wallet
+    wallet_url = main_api + '/account/wallet'
+    json_wallet = requests.get(wallet_url, headers=authorization).json()
+    result = dict()
+
+    if file_exists(os.getcwd(), 'wallet_dictionary.json') == True:
+        saved_dict = load_toon_list()
+
+        if has_expired(saved_dict['date']):
+            check_save_wallet = True
+            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
+            for item in json_wallet:
+                if (item != None):
+                    item_id = str(item['id'])
+                    result.update({item_id: item})
+            return result
+        return saved_dict
+    else:
+        check_save_wallet = True
+        result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
+        for item in json_wallet:
+            if (item != None):
+                item_id = str(item['id'])
+                result.update({item_id: item})
+        return result
 
 """"--------------------------------------------------------------------------------------------------------------------
 Currency: Type List
 ---------------------------------------------------------------------------------------------------------------------"""
 
+def save_currency_list(dict):
+    if check_save_toons:
+        with open('currency_list_dictionary.json', 'w') as outfile:
+            json.dump(dict, outfile)
+        print('currency_list_dictionary saved')
+
+
+def load_currency_list():
+    with open(os.getcwd() + '\\currency_list_dictionary.json') as fp:
+        f = json.load(fp)
+    return f
+
+def update_dictionary_currency_list():
+    global check_save_currency_list
+    currency_list_url = main_api + '/currencies'
+    json_currency_list = requests.get(currency_list_url, headers=authorization).json()
+    result = dict()
+
+    if file_exists(os.getcwd(), 'currency_list_dictionary.json') == True:
+        saved_dict = load_toon_list()
+
+        if has_expired(saved_dict['date']):
+            check_save_currency_list = True
+            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
+            for item in json_currency_list:
+                if (item != None):
+                    item_id = str(item['id'])
+                    result.update({item_id: item})
+            return result
+        return saved_dict
+    else:
+        check_save_currency_list = True
+        result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
+        for item in json_currency_list:
+            if (item != None):
+                item_id = str(item['id'])
+                result.update({item_id: item})
+        return result
+
 
 
 
 """"--------------------------------------------------------------------------------------------------------------------
- Toons
+Toons
 ---------------------------------------------------------------------------------------------------------------------"""
 
 """"--------------------------------------------------------------------------------------------------------------------
@@ -290,14 +395,14 @@ def get_toon_information(id):
 
 
 """"--------------------------------------------------------------------------------------------------------------------
-Toons Toon List
+Toons: Toon List
 ---------------------------------------------------------------------------------------------------------------------"""
 
 def save_toon_list(dict):
-  #  global check_save_toons
     if check_save_toons:
         with open('toon_list_dictionary.json', 'w') as outfile:
             json.dump(dict, outfile)
+        print('toon_list_dictionary saved')
 
 
 def load_toon_list():
@@ -315,25 +420,23 @@ def update_dictionary_toon_list():
         saved_dict = load_toon_list()
 
         if has_expired(saved_dict['date']):
-            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
             check_save_toons = True
-            count = 0
+            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
             for item in json_toon_list:
                 if (item != None):
                     item_id = str(item)
                     result.update({item_id: get_toon_information(item_id)})
-                    count = count + 1
             return result
         return saved_dict
     else:
         check_save_toons = True
         result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
         for item in json_toon_list:
-            count = 0
             if (item != None):
                 item_id = str(item)
                 result.update({item_id: get_toon_information(item_id)})
-                count = count + 1
         return result
 
 
@@ -343,12 +446,10 @@ def update_dictionary_toon_list():
 ---------------------------------------------------------------------------------------------------------------------"""
 
 def save_all_listings(dict):
-#    global check_save_all
     if check_save_all_listings:
         with open('all_listings_dictionary.json','w') as outfile:
             json.dump(dict, outfile)
-
-
+        print('all_listings_dictionary saved')
 
 def load_all_listings():
     with open(os.getcwd() + '\\all_listings_dictionary.json') as fp:
@@ -383,9 +484,10 @@ def update_dictionary_all_listings(number_list):
         saved_dict = load_all_listings()
 
         if has_expired(saved_dict['date']):
-            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
             check_save_all_listings = True
+            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
             number_list = segment_number_list(number_list)
+
             for n in number_list:
                 temp_url = main_api + sub_api + '?ids=' + str(n)
                 listings = requests.get(temp_url).json()
@@ -402,6 +504,7 @@ def update_dictionary_all_listings(number_list):
         check_save_all_listings = True
         result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
         number_list = segment_number_list(number_list)
+
         for n in number_list:
             try:
                 temp_url = main_api + sub_api + '?ids=' + str(n)
@@ -424,10 +527,10 @@ def update_dictionary_all_listings(number_list):
 
 
 def save_bank(dict):
- #   global check_save_bank
     if check_save_bank:
         with open('bank_dictionary.json', 'w') as outfile:
             json.dump(dict, outfile)
+        print('bank_dictionary saved')
 
 
 def load_bank():
@@ -438,6 +541,7 @@ def load_bank():
 
 def update_bank():
     global check_save_bank
+    sub_bank_api = '/account/bank'
     bank_url = main_api + sub_bank_api
     json_bank_data = requests.get(bank_url, headers=authorization).json()
     result = dict()
@@ -447,18 +551,19 @@ def update_bank():
 
 
         if has_expired(saved_dict['date']):
-            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
             check_save_bank = True
+            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
             for item in json_bank_data:
                 if (item != None):
                     item_id = str(item['id'])
                     result.update({item_id: item})
-        #    save_bank(dictionary_bank)
             return result
         return saved_dict
     else:
         check_save_bank = True
         result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
         for item in json_bank_data:
            if (item != None):
                item_id = str(item['id'])
@@ -470,10 +575,10 @@ Material Storage
 ---------------------------------------------------------------------------------------------------------------------"""
 
 def save_mats(dict):
-  #  global check_save_mats
     if check_save_mats:
         with open('mats_dictionary.json', 'w') as outfile:
             json.dump(dict, outfile)
+        print('mats_dictionary saved')
 
 
 def load_mats():
@@ -485,6 +590,7 @@ def load_mats():
 
 def update_material_storage():
     global check_save_mats
+    sub_materials_api = '/account/materials'
     materials_url = main_api + sub_materials_api
     json_materials_data = requests.get(materials_url, headers=authorization).json()
     result = dict()
@@ -494,13 +600,13 @@ def update_material_storage():
 
 
         if has_expired(saved_dict['date']):
-            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
             check_save_mats = True
+            result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
+
             for item in json_materials_data:
                 if (item != None):
                     item_id = str(item['id'])
                     result.update({item_id: item})
-        #    save_mats(dictionary_materials)
             return result
         return saved_dict
     else:
@@ -519,10 +625,10 @@ def update_material_storage():
 ---------------------------------------------------------------------------------------------------------------------"""
 
 def save_owned(dict):
-  #  global check_save_mats
     if check_save_owned:
         with open('owned_dictionary.json', 'w') as outfile:
             json.dump(dict, outfile)
+        print('owned_dictionary saved')
 
 
 def load_owned():
@@ -537,6 +643,8 @@ def update_owned():
     toons = update_dictionary_toon_list()
     list = []
     result = dict()
+    all_list = dict()
+    all_list.update({'total': 0, 'bank': 0, 'mats': 0})
 
     check_save_owned = True
     """ Compile list of all items """
@@ -561,10 +669,13 @@ def update_owned():
                                 g = str(f['id'])
                                 if g not in list:
                                     list.append(g)
+    for t in toons:
+        if t != 'date':
+            all_list.update({t:0})
+
 
     for n in list:
-        result.update({n: {'total': 0, 'bank': 0, 'mats': 0, 'Enbrimir': 0, 'All The Way Down': 0, 'Foundit All': 0,
-                           'Foundit': 0, 'From On High': 0, 'Founditfirst': 0}})
+        result.update({n: all_list})
 
     for b in bank:
         if (b != 'date'):
@@ -602,15 +713,28 @@ def update_owned():
 
     for n in result:
         r = result[n]
-        b = r['bank']
-        m = r['mats']
-        e = r['Enbrimir']
-        atwd = r['All The Way Down']
-        fa = r['Foundit All']
-        f = r['Foundit']
-        foh = r['From On High']
-        ff = r['Founditfirst']
-        r['total'] = b + m + e + atwd + fa + f + foh + ff
+        #combined = ""
+        lookup = dict()
+        lookup = {0: r['bank'], 1: r['mats']}
+        count = 2
+        for a in toons:
+            if a != 'date':
+                a = str(a)
+                lookup.update({count: r[a]})
+                count = count + 1
+
+        #b = r['bank']
+        #m = r['mats']
+        #e = r['Enbrimir']
+        #atwd = r['All The Way Down']
+        #fa = r['Foundit All']
+        #f = r['Foundit']
+        #foh = r['From On High']
+        #ff = r['Founditfirst']
+        total = 0
+        for l in lookup:
+            total = total + lookup[l]
+        r['total'] = total
 
     return result
 
@@ -619,35 +743,51 @@ Save and Update
 ---------------------------------------------------------------------------------------------------------------------"""
 
 
-def save_all(all_items, all_listings, bank, mats, toons, owned):
- #   save_all_items(all_items)
-    print("All items dictionary saved")
+def save_all(all_items, all_listings, bank, mats, toons, owned, currency, wallet):
+    save_all_items(all_items)
  #   save_all_listings(all_listings)
-    print("All listings dictionary saved")
     save_bank(bank)
-    print("Bank dictionary saved")
     save_mats(mats)
-    print("Mats dictionary saved")
     save_toon_list(toons)
-    print("Toon list saved")
     save_owned(owned)
-    print("Owned dictionary saved")
+    save_currency_list(currency)
+    save_wallet(wallet)
+
+def save_update_owned( dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned):
+    save_bank(dictionary_bank)
+    save_mats(dictionary_materials)
+    save_toon_list(dictionary_toon_list)
+    save_owned(dictionary_owned)
 
 
-def update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned):
- #   dictionary_all_items = update_dictionary_all_items()
- #   dictionary_all_listings = update_dictionary_all_listings(number_list)
+def update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned, dictionary_currency_list, dictionary_wallet):
+    dictionary_all_items = update_dictionary_all_items()
+    dictionary_all_listings = update_dictionary_all_listings(number_list)
     dictionary_bank = update_bank()
     dictionary_materials = update_material_storage()
     dictionary_toon_list = update_dictionary_toon_list()
     dictionary_owned = update_owned()
-    save_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned)
+    dictionary_currency_list = update_dictionary_currency_list()
+    dictionary_wallet = update_dictionary_wallet()
+    save_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned, dictionary_currency_list, dictionary_wallet)
+
+
+def update_owned(dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned):
+    dictionary_bank = update_bank()
+    dictionary_materials = update_material_storage()
+    dictionary_toon_list = update_dictionary_toon_list()
+    dictionary_owned = update_owned()
+    save_update_owned( dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned)
 
 
 
-json_dictionary_keys = {'basic': ['id', 'name', 'type'],
-                        'all': ['chat_link', 'name', 'icon', 'description', 'type', 'rarity', 'level', 'vendor_value',
-                                'default_skin', 'flags', 'game_types', 'restrictions', 'details']}
+def run():
+    input = raw_input("To update all directories type 1. To update owned directoriess type 2. ")
 
-update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned)
+    if input == 1:
+        update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned, dictionary_currency_list, dictionary_wallet)
+    elif input == 2:
+        update_owned(dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned)
 
+
+run()
