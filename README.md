@@ -1,6 +1,13 @@
 # GW2-Market-Analysis
 Backend, gather market information from GW2 api and perform predictive analysis
 
+To use:
+Download test_api_call_json.py
+Download search.py
+Store them in the same folder
+Run test_api_call_json.py first
+Run search.py if desired
+
 TEST_API_CALL_JSON.PY:
 
 At the moment the test_api_call_json.py file creates local databases containing information on all items, listed items, bank items,
