@@ -1,6 +1,5 @@
 import json
 import os
-#from curses.ascii import isalpha
 
 from pip._vendor.distlib.compat import raw_input
 
