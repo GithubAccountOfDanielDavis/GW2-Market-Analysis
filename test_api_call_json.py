@@ -7,15 +7,21 @@ from pip._vendor.distlib.compat import raw_input
 """"--------------------------------------------------------------------------------------------------------------------
  API
 ---------------------------------------------------------------------------------------------------------------------"""
+
+def save_api(key):
+    file = open("api_key.txt","w")
+    file.write(key)
+    print('api_key saved')
+
+def load_api():
+    file = open("api_key.txt","r")
+    return file.read()
+
 main_api = 'https://api.guildwars2.com/v2'
 
 sub_api = '/commerce/listings'
 url = main_api + sub_api
 
-
-
-# 'Bearer C5E878F1-F241-354C-BA66-65D7481FEC6A6DDDF75C-3455-4DBC-AECC-B03FEB30EFE3'
-authorization = ""
 
 api_key = ""
 bearer = 'Bearer ' + api_key
@@ -139,6 +145,8 @@ dictionary_list = [dictionary_all_items, dictionary_all_listings, dictionary_ban
 
 debug = False
 
+manual_override = False
+
 
 """"--------------------------------------------------------------------------------------------------------------------
  All Items
@@ -178,12 +186,13 @@ def segment_number_list(number_list):
 
 def update_dictionary_all_items():
     global check_save_all
+    global manual_override
     result = dict()
 
     if file_exists(os.getcwd(), 'all_items_dictionary.json') == True:
         saved_dict = load_all_items()
 
-        if has_expired(saved_dict['date']):
+        if has_expired(saved_dict['date']) or manual_override:
             result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
             all_url = main_api + '/items'
             number_list = requests.get(all_url, headers=authorization).json()
@@ -228,7 +237,12 @@ def update_dictionary_all_items():
                 except:
                     print("Error in saving listing")
             return result
-        return saved_dict
+        input = raw_input("Time lock has not expired. Manual Override? Type y or n. ")
+        if input == 'y':
+            manual_override = True
+            update_dictionary_all_items()
+        else:
+            return saved_dict
     else:
         all_url = main_api + '/items'
         number_list = requests.get(all_url, headers=authorization).json()
@@ -304,6 +318,7 @@ def load_wallet():
 
 def update_dictionary_wallet():
     global check_save_wallet
+    global manual_override
     wallet_url = main_api + '/account/wallet'
     json_wallet = requests.get(wallet_url, headers=authorization).json()
     result = dict()
@@ -311,7 +326,7 @@ def update_dictionary_wallet():
     if file_exists(os.getcwd(), 'wallet_dictionary.json') == True:
         saved_dict = load_toon_list()
 
-        if has_expired(saved_dict['date']):
+        if has_expired(saved_dict['date']) or manual_override:
             check_save_wallet = True
             result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
 
@@ -349,6 +364,7 @@ def load_currency_list():
 
 def update_dictionary_currency_list():
     global check_save_currency_list
+    global manual_override
     currency_list_url = main_api + '/currencies'
     json_currency_list = requests.get(currency_list_url, headers=authorization).json()
     result = dict()
@@ -356,7 +372,7 @@ def update_dictionary_currency_list():
     if file_exists(os.getcwd(), 'currency_list_dictionary.json') == True:
         saved_dict = load_toon_list()
 
-        if has_expired(saved_dict['date']):
+        if has_expired(saved_dict['date']) or manual_override:
             check_save_currency_list = True
             result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
 
@@ -412,6 +428,7 @@ def load_toon_list():
 
 def update_dictionary_toon_list():
     global check_save_toons
+    global manual_override
     toon_url = main_api + '/characters'
     json_toon_list = requests.get(toon_url, headers=authorization).json()
     result = dict()
@@ -419,7 +436,7 @@ def update_dictionary_toon_list():
     if file_exists(os.getcwd(), 'toon_list_dictionary.json') == True:
         saved_dict = load_toon_list()
 
-        if has_expired(saved_dict['date']):
+        if has_expired(saved_dict['date']) or manual_override:
             check_save_toons = True
             result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
 
@@ -478,12 +495,13 @@ def segment_number_list(number_list):
 
 def update_dictionary_all_listings(number_list):
     global check_save_all_listings
+    global manual_override
     result = dict()
 
     if file_exists(os.getcwd(), 'all_listings_dictionary.json') == True:
         saved_dict = load_all_listings()
 
-        if has_expired(saved_dict['date']):
+        if has_expired(saved_dict['date']) or manual_override:
             check_save_all_listings = True
             result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
             number_list = segment_number_list(number_list)
@@ -541,6 +559,7 @@ def load_bank():
 
 def update_bank():
     global check_save_bank
+    global manual_override
     sub_bank_api = '/account/bank'
     bank_url = main_api + sub_bank_api
     json_bank_data = requests.get(bank_url, headers=authorization).json()
@@ -550,7 +569,7 @@ def update_bank():
         saved_dict = load_bank()
 
 
-        if has_expired(saved_dict['date']):
+        if has_expired(saved_dict['date']) or manual_override:
             check_save_bank = True
             result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
 
@@ -590,6 +609,7 @@ def load_mats():
 
 def update_material_storage():
     global check_save_mats
+    global manual_override
     sub_materials_api = '/account/materials'
     materials_url = main_api + sub_materials_api
     json_materials_data = requests.get(materials_url, headers=authorization).json()
@@ -599,7 +619,7 @@ def update_material_storage():
         saved_dict = load_mats()
 
 
-        if has_expired(saved_dict['date']):
+        if has_expired(saved_dict['date']) or manual_override:
             check_save_mats = True
             result.update({'date': datetime.date.today().strftime("%Y-%m-%d")})
 
@@ -773,6 +793,7 @@ def update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, d
 
 
 def update_owned(dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned):
+    manual_override = True
     dictionary_bank = update_bank()
     dictionary_materials = update_material_storage()
     dictionary_toon_list = update_dictionary_toon_list()
@@ -782,12 +803,26 @@ def update_owned(dictionary_bank, dictionary_materials, dictionary_toon_list, di
 
 
 def run():
-    input = raw_input("To update all directories type 1. To update owned directoriess type 2. ")
+    if file_exists(os.getcwd(), 'api_key.txt') == True:
+        api_key = load_api()
+        input = raw_input("To update all directories type 1. To update owned directoriess type 2. ")
 
-    if input == 1:
-        update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned, dictionary_currency_list, dictionary_wallet)
-    elif input == 2:
-        update_owned(dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned)
+        if input == 1:
+            update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials,
+                       dictionary_toon_list, dictionary_owned, dictionary_currency_list, dictionary_wallet)
+        elif input == 2:
+            update_owned(dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned)
 
+    else:
+        key = raw_input("Enter API key to continue: ")
+        api_key = key
+        save_api(key)
+        input = raw_input("To update all directories type 1. To update owned directoriess type 2. ")
+
+        if input == 1:
+            update_all(dictionary_all_items, dictionary_all_listings, dictionary_bank, dictionary_materials,
+                       dictionary_toon_list, dictionary_owned, dictionary_currency_list, dictionary_wallet)
+        elif input == 2:
+            update_owned(dictionary_bank, dictionary_materials, dictionary_toon_list, dictionary_owned)
 
 run()
