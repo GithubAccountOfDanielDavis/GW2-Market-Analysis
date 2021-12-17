@@ -1,7 +1,6 @@
 import express from 'express'
 import { connection } from './entity/utils'
 import { getUserById, getUsers, postUserCreation, deleteUser, putUserUpdate } from './controller/user'
-import path from 'path'
 
 // Async to handle initialization
 export default (async () => {
