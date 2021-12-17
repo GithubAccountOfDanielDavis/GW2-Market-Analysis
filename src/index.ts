@@ -13,11 +13,8 @@ export default (async () => {
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
 
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'ui', 'index.html'))
-  })
-  app.get('/newtag', (req, res) => {
-    res.sendFile(path.join(__dirname, 'ui', 'newtag.html'))
+  app.get('/fetch_new_listings', (req, res) => {
+    res.json({ status: 'refreshing' })
   })
 
   // register routes
